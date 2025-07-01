@@ -171,6 +171,11 @@
             justify-content: center;
             background: white;
             position: relative;
+            /* Prevent text selection and interactions */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         .display-image {
@@ -178,6 +183,20 @@
             max-height: 100%;
             object-fit: contain;
             transition: all 0.3s ease;
+            /* Prevent all user interactions */
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+            /* Prevent context menu */
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .placeholder {
@@ -667,6 +686,34 @@
         function displayImage(src) {
             imageContainer.innerHTML = `<img src="${src}" alt="Display Image" class="display-image" id="displayImage">`;
             currentImage = document.getElementById('displayImage');
+            
+            // Prevent all interactions with the image
+            currentImage.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            currentImage.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            currentImage.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            currentImage.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
+            // Prevent touch interactions on mobile
+            currentImage.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+            
             updateImageSettings();
             
             // Add grid if enabled

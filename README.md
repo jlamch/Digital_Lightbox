@@ -59,12 +59,12 @@ Visit the live application: [Digital Lightbox](https://yourusername.github.io/JL
 1. Fork this repository
 2. Go to repository Settings → Pages
 3. Select "Deploy from a branch" and choose "main"
-4. Your site will be available at `https://jlamch.github.io/JL-lightbox/`
+4. Your site will be available at `https://jlamch.github.io/Digital_Lightbox/`
 
 ### Local Development
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jlamch/JL-lightbox.git
+   git clone https://github.com/jlamch/Digital_Lightbox.git
    ```
 2. Open `index.html` in your web browser
 
