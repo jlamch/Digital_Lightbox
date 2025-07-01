@@ -22,8 +22,6 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             overflow-x: auto;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
         .container {
@@ -288,6 +286,79 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.7;
+        }
+
+        .grid-line {
+            position: absolute;
+            background: #ff4444;
+            z-index: 10;
+        }
+
+        .grid-line.horizontal {
+            width: 100%;
+            height: 1px;
+            left: 0;
+        }
+
+        .grid-line.vertical {
+            height: 100%;
+            width: 1px;
+            top: 0;
+        }
+
+        .grid-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding: 15px;
+            background: rgba(240, 244, 255, 0.5);
+            border-radius: 8px;
+            border: 1px dashed #667eea;
+        }
+
+        .grid-controls label {
+            margin: 0;
+            font-size: 0.85em;
+        }
+
+        .grid-controls input[type="number"] {
+            width: 60px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .grid-controls input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -338,6 +409,32 @@
                 <button class="btn-secondary" id="invertBtn">Invert Colors</button>
             </div>
 
+            <div class="control-group">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="gridToggle">
+                    <label for="gridToggle">Show Position Grid (for iPad tracing)</label>
+                </div>
+                <div class="grid-controls" id="gridControls" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="gridRows">Rows:</label>
+                        <input type="number" id="gridRows" min="2" max="20" value="4">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="gridCols">Columns:</label>
+                        <input type="number" id="gridCols" min="2" max="20" value="3">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="gridColor">Color:</label>
+                        <input type="color" id="gridColor" value="#ff4444">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="gridOpacity">Opacity:</label>
+                        <input type="range" id="gridOpacity" min="0.2" max="1" step="0.1" value="0.7" style="width: 80px;">
+                        <span id="gridOpacityValue">70%</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="info-panel">
                 <div class="info-item">
                     <span class="info-label">A4 Size:</span>
@@ -350,6 +447,10 @@
                 <div class="info-item">
                     <span class="info-label">Current DPI:</span>
                     <span class="info-value" id="currentDpi">96 DPI</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Grid Status:</span>
+                    <span class="info-value" id="gridStatus">Disabled</span>
                 </div>
             </div>
         </div>
@@ -389,27 +490,27 @@
         const detectDpiBtn = document.getElementById('detectDpiBtn');
         const displayResolution = document.getElementById('displayResolution');
         const currentDpiDisplay = document.getElementById('currentDpi');
+        
+        // Grid controls
+        const gridToggle = document.getElementById('gridToggle');
+        const gridControls = document.getElementById('gridControls');
+        const gridRows = document.getElementById('gridRows');
+        const gridCols = document.getElementById('gridCols');
+        const gridColor = document.getElementById('gridColor');
+        const gridOpacity = document.getElementById('gridOpacity');
+        const gridOpacityValue = document.getElementById('gridOpacityValue');
+        const gridStatus = document.getElementById('gridStatus');
+        let gridOverlay = null;
 
         // Handle image upload
         imageInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
-                // Check file size (limit to 10MB)
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('File size too large. Please select an image smaller than 10MB.');
-                    return;
-                }
-                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     displayImage(e.target.result);
                 };
-                reader.onerror = function() {
-                    alert('Error reading file. Please try again.');
-                };
                 reader.readAsDataURL(file);
-            } else {
-                alert('Please select a valid image file.');
             }
         });
 
@@ -470,10 +571,108 @@
         // Initialize with default DPI
         updateLightboxSize();
 
+        // Grid functionality
+        function createGridElement() {
+            const rows = parseInt(gridRows.value);
+            const cols = parseInt(gridCols.value);
+            const color = gridColor.value;
+            const opacity = parseFloat(gridOpacity.value);
+
+            const gridElement = document.createElement('div');
+            gridElement.className = 'grid-overlay';
+            gridElement.style.opacity = opacity;
+
+            // Create horizontal lines
+            for (let i = 1; i < rows; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line horizontal';
+                line.style.background = color;
+                line.style.top = `${(i / rows) * 100}%`;
+                gridElement.appendChild(line);
+            }
+
+            // Create vertical lines
+            for (let i = 1; i < cols; i++) {
+                const line = document.createElement('div');
+                line.className = 'grid-line vertical';
+                line.style.background = color;
+                line.style.left = `${(i / cols) * 100}%`;
+                gridElement.appendChild(line);
+            }
+
+            return gridElement;
+        }
+
+        function createGrid() {
+            // Remove existing grid
+            if (gridOverlay) {
+                gridOverlay.remove();
+            }
+
+            if (!gridToggle.checked) {
+                return;
+            }
+
+            gridOverlay = createGridElement();
+
+            // Add grid to image container
+            const containers = document.querySelectorAll('.image-container');
+            containers.forEach(container => {
+                // Only add to containers that have images
+                if (container.querySelector('.display-image')) {
+                    container.appendChild(gridOverlay.cloneNode(true));
+                }
+            });
+        }
+
+        function removeGrid() {
+            const grids = document.querySelectorAll('.grid-overlay');
+            grids.forEach(grid => grid.remove());
+            gridOverlay = null;
+        }
+
+        // Grid event listeners
+        gridToggle.addEventListener('change', function() {
+            gridControls.style.display = this.checked ? 'flex' : 'none';
+            if (this.checked) {
+                createGrid();
+                gridStatus.textContent = `${gridRows.value}×${gridCols.value} Grid`;
+            } else {
+                removeGrid();
+                gridStatus.textContent = 'Disabled';
+            }
+        });
+
+        gridRows.addEventListener('input', function() {
+            createGrid();
+            if (gridToggle.checked) {
+                gridStatus.textContent = `${this.value}×${gridCols.value} Grid`;
+            }
+        });
+        
+        gridCols.addEventListener('input', function() {
+            createGrid();
+            if (gridToggle.checked) {
+                gridStatus.textContent = `${gridRows.value}×${this.value} Grid`;
+            }
+        });
+        
+        gridColor.addEventListener('input', createGrid);
+        
+        gridOpacity.addEventListener('input', function() {
+            gridOpacityValue.textContent = Math.round(this.value * 100) + '%';
+            createGrid();
+        });
+
         function displayImage(src) {
             imageContainer.innerHTML = `<img src="${src}" alt="Display Image" class="display-image" id="displayImage">`;
             currentImage = document.getElementById('displayImage');
             updateImageSettings();
+            
+            // Add grid if enabled
+            if (gridToggle.checked) {
+                createGrid();
+            }
         }
 
         // Brightness control
@@ -514,6 +713,18 @@
             dpiValue.textContent = '96';
             isInverted = false;
             invertBtn.textContent = 'Invert Colors';
+            
+            // Reset grid settings
+            gridToggle.checked = false;
+            gridControls.style.display = 'none';
+            gridRows.value = 4;
+            gridCols.value = 3;
+            gridColor.value = '#ff4444';
+            gridOpacity.value = 0.7;
+            gridOpacityValue.textContent = '70%';
+            gridStatus.textContent = 'Disabled';
+            removeGrid();
+            
             updateLightboxSize();
             updateImageSettings();
         });
@@ -562,6 +773,15 @@
                 fullscreenImage.style.opacity = opacity;
             }
             
+            // Add grid to fullscreen if enabled
+            if (gridToggle.checked) {
+                const fullscreenContainer = fullscreenDiv.querySelector('.image-container');
+                if (fullscreenContainer && fullscreenImage) {
+                    const gridClone = createGridElement();
+                    fullscreenContainer.appendChild(gridClone);
+                }
+            }
+            
             // Add escape key listener
             document.addEventListener('keydown', handleEscapeKey);
         });
@@ -597,22 +817,11 @@
             
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type.startsWith('image/')) {
-                // Check file size (limit to 10MB)
-                if (files[0].size > 10 * 1024 * 1024) {
-                    alert('File size too large. Please select an image smaller than 10MB.');
-                    return;
-                }
-                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     displayImage(e.target.result);
                 };
-                reader.onerror = function() {
-                    alert('Error reading file. Please try again.');
-                };
                 reader.readAsDataURL(files[0]);
-            } else {
-                alert('Please drop a valid image file.');
             }
         });
     </script>
