@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Digital Lightbox - Display images in precise A4 size for tracing and outline copying. Perfect for artists and designers.">
+    <meta name="keywords" content="lightbox, A4, tracing, image display, digital art, outline copying">
+    <meta name="author" content="Digital Lightbox">
+    <meta property="og:title" content="Digital Lightbox - A4 Image Display">
+    <meta property="og:description" content="Display images in precise A4 size for tracing and outline copying">
+    <meta property="og:type" content="website">
+    <title>Digital Lightbox - A4 Image Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="file"]:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+            accent-color: #667eea;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            color: #495057;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .display-area {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .lightbox {
+            /* A4 dimensions calculated based on DPI */
+            width: 794px;
+            height: 1123px;
+            margin: 0 auto;
+            position: relative;
+            background: white;
+            border: 2px solid #e0e0e0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .image-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            position: relative;
+        }
+
+        .display-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: all 0.3s ease;
+        }
+
+        .placeholder {
+            color: #999;
+            font-size: 1.2em;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 40px;
+        }
+
+        .placeholder svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .info-value {
+            color: #666;
+        }
+
+        @media (max-width: 850px) {
+            .lightbox {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 794/1123;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+
+        .fullscreen-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fullscreen-mode .lightbox {
+            border: 1px solid #ccc;
+        }
+
+        .exit-fullscreen {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Digital Lightbox</h1>
+            <p>Display images in A4 size for precise tracing and outline copying</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="imageInput">Select Image to Display</label>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+
+            <div class="control-group">
+                <label for="dpiInput">Monitor DPI: <span id="dpiValue">96</span></label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="number" id="dpiInput" min="72" max="300" value="96" style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <button type="button" class="btn-secondary" id="detectDpiBtn" style="padding: 8px 12px; font-size: 0.8em;">Auto-Detect</button>
+                </div>
+                <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                    Common values: 96 (1080p), 120-144 (1440p), 150-200 (4K)
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="brightnessSlider">Background Brightness: <span id="brightnessValue">100%</span></label>
+                <input type="range" id="brightnessSlider" min="10" max="150" value="100">
+                <div class="range-labels">
+                    <span>Darker</span>
+                    <span>Brighter</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="opacitySlider">Image Opacity: <span id="opacityValue">100%</span></label>
+                <input type="range" id="opacitySlider" min="10" max="100" value="100">
+                <div class="range-labels">
+                    <span>Transparent</span>
+                    <span>Opaque</span>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="fullscreenBtn">Enter Fullscreen Mode</button>
+                <button class="btn-secondary" id="resetBtn">Reset Settings</button>
+                <button class="btn-secondary" id="invertBtn">Invert Colors</button>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-item">
+                    <span class="info-label">A4 Size:</span>
+                    <span class="info-value">210 × 297 mm (8.27 × 11.69 inches)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Display Resolution:</span>
+                    <span class="info-value" id="displayResolution">794 × 1123 pixels</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Current DPI:</span>
+                    <span class="info-value" id="currentDpi">96 DPI</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="display-area">
+            <div class="lightbox" id="lightbox">
+                <div class="image-container" id="imageContainer">
+                    <div class="placeholder">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                        </svg>
+                        <p>Select an image to display in A4 size</p>
+                        <p style="font-size: 0.9em; margin-top: 10px; opacity: 0.7;">Perfect for tracing and outline copying</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let isInverted = false;
+        let currentDpi = 96;
+
+        const imageInput = document.getElementById('imageInput');
+        const imageContainer = document.getElementById('imageContainer');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const brightnessValue = document.getElementById('brightnessValue');
+        const opacityValue = document.getElementById('opacityValue');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const invertBtn = document.getElementById('invertBtn');
+        const lightbox = document.getElementById('lightbox');
+        const dpiInput = document.getElementById('dpiInput');
+        const dpiValue = document.getElementById('dpiValue');
+        const detectDpiBtn = document.getElementById('detectDpiBtn');
+        const displayResolution = document.getElementById('displayResolution');
+        const currentDpiDisplay = document.getElementById('currentDpi');
+
+        // Handle image upload
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                // Check file size (limit to 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File size too large. Please select an image smaller than 10MB.');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    displayImage(e.target.result);
+                };
+                reader.onerror = function() {
+                    alert('Error reading file. Please try again.');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please select a valid image file.');
+            }
+        });
+
+        // DPI handling
+        function calculateA4Dimensions(dpi) {
+            // A4 size: 210 × 297 mm
+            // Convert mm to inches: divide by 25.4
+            const a4WidthInches = 210 / 25.4;
+            const a4HeightInches = 297 / 25.4;
+            
+            // Calculate pixels: inches × DPI
+            const widthPixels = Math.round(a4WidthInches * dpi);
+            const heightPixels = Math.round(a4HeightInches * dpi);
+            
+            return { width: widthPixels, height: heightPixels };
+        }
+
+        function updateLightboxSize() {
+            const dimensions = calculateA4Dimensions(currentDpi);
+            lightbox.style.width = dimensions.width + 'px';
+            lightbox.style.height = dimensions.height + 'px';
+            
+            // Update info display
+            displayResolution.textContent = `${dimensions.width} × ${dimensions.height} pixels`;
+            currentDpiDisplay.textContent = `${currentDpi} DPI`;
+        }
+
+        // DPI input handling
+        dpiInput.addEventListener('input', function() {
+            currentDpi = parseInt(this.value) || 96;
+            dpiValue.textContent = currentDpi;
+            updateLightboxSize();
+        });
+
+        // Auto-detect DPI (approximation)
+        detectDpiBtn.addEventListener('click', function() {
+            // Create a temporary element to measure
+            const testDiv = document.createElement('div');
+            testDiv.style.width = '1in';
+            testDiv.style.visibility = 'hidden';
+            testDiv.style.position = 'absolute';
+            document.body.appendChild(testDiv);
+            
+            const dpi = testDiv.offsetWidth;
+            document.body.removeChild(testDiv);
+            
+            if (dpi > 50 && dpi < 400) { // Sanity check
+                currentDpi = dpi;
+                dpiInput.value = dpi;
+                dpiValue.textContent = dpi;
+                updateLightboxSize();
+                alert(`Detected DPI: ${dpi}`);
+            } else {
+                alert('Could not reliably detect DPI. Please enter manually.');
+            }
+        });
+
+        // Initialize with default DPI
+        updateLightboxSize();
+
+        function displayImage(src) {
+            imageContainer.innerHTML = `<img src="${src}" alt="Display Image" class="display-image" id="displayImage">`;
+            currentImage = document.getElementById('displayImage');
+            updateImageSettings();
+        }
+
+        // Brightness control
+        brightnessSlider.addEventListener('input', function() {
+            brightnessValue.textContent = this.value + '%';
+            updateImageSettings();
+        });
+
+        // Opacity control
+        opacitySlider.addEventListener('input', function() {
+            opacityValue.textContent = this.value + '%';
+            updateImageSettings();
+        });
+
+        function updateImageSettings() {
+            if (currentImage) {
+                const brightness = brightnessSlider.value;
+                const opacity = opacitySlider.value / 100;
+                
+                let filter = `brightness(${brightness}%)`;
+                if (isInverted) {
+                    filter += ' invert(1)';
+                }
+                
+                currentImage.style.filter = filter;
+                currentImage.style.opacity = opacity;
+            }
+        }
+
+        // Reset settings
+        resetBtn.addEventListener('click', function() {
+            brightnessSlider.value = 100;
+            opacitySlider.value = 100;
+            brightnessValue.textContent = '100%';
+            opacityValue.textContent = '100%';
+            dpiInput.value = 96;
+            currentDpi = 96;
+            dpiValue.textContent = '96';
+            isInverted = false;
+            invertBtn.textContent = 'Invert Colors';
+            updateLightboxSize();
+            updateImageSettings();
+        });
+
+        // Invert colors
+        invertBtn.addEventListener('click', function() {
+            isInverted = !isInverted;
+            invertBtn.textContent = isInverted ? 'Remove Invert' : 'Invert Colors';
+            updateImageSettings();
+        });
+
+        // Fullscreen mode
+        fullscreenBtn.addEventListener('click', function() {
+            if (!currentImage) {
+                alert('Please select an image first!');
+                return;
+            }
+            
+            const fullscreenDiv = document.createElement('div');
+            fullscreenDiv.className = 'fullscreen-mode';
+            
+            const dimensions = calculateA4Dimensions(currentDpi);
+            fullscreenDiv.innerHTML = `
+                <button class="exit-fullscreen" onclick="exitFullscreen()">Exit Fullscreen (ESC)</button>
+                <div class="lightbox" style="width: ${dimensions.width}px; height: ${dimensions.height}px;">
+                    <div class="image-container">
+                        ${currentImage.outerHTML}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(fullscreenDiv);
+            
+            // Apply current settings to fullscreen image
+            const fullscreenImage = fullscreenDiv.querySelector('.display-image');
+            if (fullscreenImage) {
+                const brightness = brightnessSlider.value;
+                const opacity = opacitySlider.value / 100;
+                
+                let filter = `brightness(${brightness}%)`;
+                if (isInverted) {
+                    filter += ' invert(1)';
+                }
+                
+                fullscreenImage.style.filter = filter;
+                fullscreenImage.style.opacity = opacity;
+            }
+            
+            // Add escape key listener
+            document.addEventListener('keydown', handleEscapeKey);
+        });
+
+        function exitFullscreen() {
+            const fullscreenDiv = document.querySelector('.fullscreen-mode');
+            if (fullscreenDiv) {
+                fullscreenDiv.remove();
+            }
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+
+        function handleEscapeKey(e) {
+            if (e.key === 'Escape') {
+                exitFullscreen();
+            }
+        }
+
+        // Drag and drop functionality
+        lightbox.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            lightbox.style.background = '#f0f4ff';
+        });
+
+        lightbox.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            lightbox.style.background = 'white';
+        });
+
+        lightbox.addEventListener('drop', function(e) {
+            e.preventDefault();
+            lightbox.style.background = 'white';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                // Check file size (limit to 10MB)
+                if (files[0].size > 10 * 1024 * 1024) {
+                    alert('File size too large. Please select an image smaller than 10MB.');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    displayImage(e.target.result);
+                };
+                reader.onerror = function() {
+                    alert('Error reading file. Please try again.');
+                };
+                reader.readAsDataURL(files[0]);
+            } else {
+                alert('Please drop a valid image file.');
+            }
+        });
+    </script>
+</body>
+</html>
